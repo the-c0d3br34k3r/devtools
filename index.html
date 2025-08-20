@@ -94,6 +94,14 @@
             stroke-dasharray: 5 3;
             marker-end: url(#arrowhead-res);
         }
+        #har-diagram-svg .slow-arrow {
+            stroke: #f87171; /* red-400 */
+            stroke-width: 2.5;
+        }
+        #har-diagram-svg .large-text {
+            fill: #f87171; /* red-400 */
+            font-weight: bold;
+        }
         #har-diagram-svg .interaction {
             cursor: pointer;
         }
@@ -280,6 +288,14 @@
                             <label for="har-file-input" class="block text-sm font-medium mb-2">Upload .har file</label>
                             <input id="har-file-input" type="file" accept=".har" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer"/>
                         </div>
+                        <div>
+                            <label for="har-rtt-input" class="block text-sm font-medium mb-2">Expected Round Trip Time (ms)</label>
+                            <input id="har-rtt-input" type="number" value="500" min="0" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2">
+                        </div>
+                        <div>
+                            <label for="har-size-input" class="block text-sm font-medium mb-2">Expected Maximum Response Size (KB)</label>
+                            <input id="har-size-input" type="number" value="1024" min="0" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2">
+                        </div>
                         <div class="flex-grow flex flex-col min-h-0">
                             <h3 class="text-lg font-medium text-white mb-2">Filter by Host</h3>
                             <div id="har-hosts-container" class="flex-grow overflow-y-auto bg-gray-800 border border-gray-700 rounded-md p-3 space-y-2">
@@ -364,7 +380,7 @@
                 </div>
                 <div id="crypto-error" class="mt-4 text-red-400 h-6"></div>
             </div>
-
+            
             <!-- About You Panel -->
             <div id="about" class="tool-panel">
                  <h2 class="text-2xl font-bold text-white mb-4">About You</h2>
@@ -415,7 +431,7 @@
             <div id="har-modal-content" class="p-4 overflow-y-auto"></div>
         </div>
     </div>
-
+    
     <!-- HAR Timeline Modal -->
     <div id="har-timeline-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden">
         <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
@@ -457,7 +473,7 @@
                     link.classList.toggle('text-gray-300', !isActive);
                     link.classList.toggle('hover:bg-gray-700', !isActive);
                 });
-
+                
                 if (targetId === 'about') {
                     populateAboutYouInfo();
                 }
@@ -715,6 +731,8 @@
 
             // --- HAR Analyzer Logic ---
             const harFileInput = document.getElementById('har-file-input');
+            const harRttInput = document.getElementById('har-rtt-input');
+            const harSizeInput = document.getElementById('har-size-input');
             const harHostsContainer = document.getElementById('har-hosts-container');
             const harDiagramSvg = document.getElementById('har-diagram-svg');
             const harSelectAll = document.getElementById('har-select-all');
@@ -745,6 +763,19 @@
                 };
                 reader.readAsText(file);
             });
+            
+            harRttInput.addEventListener('input', renderHarDiagram);
+            harSizeInput.addEventListener('input', renderHarDiagram);
+
+            function formatBytes(bytes, decimals = 2) {
+                if (bytes < 0) return 'N/A';
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
 
             function populateHostFilters() {
                 if (!harData) return;
@@ -774,6 +805,8 @@
 
             function renderHarDiagram() {
                 if (!harData) return;
+                const expectedRtt = parseInt(harRttInput.value, 10) || 0;
+                const expectedSize = parseInt(harSizeInput.value, 10) || 0;
                 const selectedHosts = Array.from(harHostsContainer.querySelectorAll('input:checked')).map(cb => cb.value);
                 const filteredEntries = harData.log.entries.filter(e => selectedHosts.includes(new URL(e.request.url).hostname));
                 harDiagramSvg.innerHTML = harDiagramSvg.querySelector('defs').outerHTML;
@@ -803,21 +836,30 @@
                     const y = i * 80 + 80;
                     const browserX = participantX['Browser'];
                     const hostX = participantX[new URL(entry.request.url).hostname];
-                    if (hostX === undefined) return;
+                    const isSlow = expectedRtt > 0 && entry.time > expectedRtt;
+                    const responseSizeKB = entry.response.content.size / 1024;
+                    const isLarge = expectedSize > 0 && responseSizeKB > expectedSize;
 
+                    if (hostX === undefined) return;
+                    
                     const reqGroup = createInteractionGroup(entry, 'request');
-                    reqGroup.appendChild(createArrow(browserX, hostX, y, 'req-arrow'));
+                    reqGroup.appendChild(createArrow(browserX, hostX, y, 'req-arrow', isSlow));
                     reqGroup.appendChild(createText(`${entry.request.method} ${new URL(entry.request.url).pathname}`, browserX, hostX, y - 5));
                     harDiagramSvg.appendChild(reqGroup);
 
+                    const resSize = formatBytes(entry.response.content.size);
                     const resGroup = createInteractionGroup(entry, 'response');
-                    resGroup.appendChild(createArrow(hostX, browserX, y + 30, 'res-arrow'));
-                    resGroup.appendChild(createText(`${entry.response.status} ${entry.response.statusText}`, hostX, browserX, y + 25));
+                    resGroup.appendChild(createArrow(hostX, browserX, y + 30, 'res-arrow', isSlow));
+                    const resText = createText(`${entry.response.status} ${entry.response.statusText} (${resSize})`, hostX, browserX, y + 25);
+                    if (isLarge) {
+                        resText.classList.add('large-text');
+                    }
+                    resGroup.appendChild(resText);
                     harDiagramSvg.appendChild(resGroup);
-
+                    
                     const timelineGroup = createTimelineButtonGroup(entry);
                     const midX = (browserX + hostX) / 2;
-                    timelineGroup.setAttribute('transform', `translate(${midX + 60}, ${y + 15})`);
+                    timelineGroup.setAttribute('transform', `translate(${midX + 80}, ${y + 15})`);
                     harDiagramSvg.appendChild(timelineGroup);
                 });
             }
@@ -830,7 +872,7 @@
                 g.addEventListener('click', showHarDetails);
                 return g;
             }
-
+            
             function createTimelineButtonGroup(entry) {
                 const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 g.setAttribute('class', 'interaction');
@@ -843,8 +885,9 @@
                 return g;
             }
 
-            function createArrow(x1, x2, y, className) {
+            function createArrow(x1, x2, y, baseClass, isSlow) {
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                const className = isSlow ? `${baseClass} slow-arrow` : baseClass;
                 line.setAttribute('x1', x1); line.setAttribute('y1', y); line.setAttribute('x2', x2 - (x1 < x2 ? 10 : -10)); line.setAttribute('y2', y); line.setAttribute('class', className);
                 return line;
             }
@@ -874,7 +917,7 @@
                 harModalContent.innerHTML = contentHTML;
                 harModal.classList.remove('hidden');
             }
-
+            
             function showHarTimeline(event) {
                 event.stopPropagation();
                 const g = event.currentTarget;
@@ -928,7 +971,15 @@
             const ideHighlightingCode = ideHighlightingPre.querySelector('code');
             const ideOutput = document.getElementById('ide-output');
             let pyodide = null;
-            ideCodeInput.value = 'import sys\n\nprint(f"Hello from Python {sys.version}")';
+            ideCodeInput.value = `import micropip
+await micropip.install('numpy')
+import numpy as np
+
+a = np.array([1, 2, 3, 4, 5])
+print("Numpy array created successfully!")
+print(a)
+print(f"Mean of the array: {np.mean(a)}")`;
+            
             function syncHighlighting() {
                 const code = ideCodeInput.value;
                 ideHighlightingCode.textContent = code;
@@ -938,18 +989,22 @@
             }
             ideCodeInput.addEventListener('input', syncHighlighting);
             ideCodeInput.addEventListener('scroll', syncHighlighting);
+            
             async function initializePyodide() {
                 try {
                     pyodide = await loadPyodide();
+                    ideOutput.textContent += 'Python environment loaded.\nLoading micropip...\n';
+                    await pyodide.loadPackage("micropip");
                     ideRunBtnText.textContent = 'Run';
                     ideRunBtn.disabled = false;
-                    ideOutput.textContent += 'Python environment ready.\n';
+                    ideOutput.textContent += 'Micropip ready. You can now install packages.\n';
                 } catch (error) {
                     ideRunBtnText.textContent = 'Error';
                     ideOutput.textContent += `Error loading Python environment: ${error}\n`;
                 }
             }
             initializePyodide();
+            
             ideRunBtn.addEventListener('click', async () => {
                 if (!pyodide) {
                     ideOutput.textContent = 'Python environment is not ready yet.';
@@ -1100,7 +1155,7 @@
 
                 return btoa(String.fromCharCode.apply(null, combined));
             }
-
+            
             // --- About You Logic ---
             let ipFetched = false;
             function populateAboutYouInfo() {
