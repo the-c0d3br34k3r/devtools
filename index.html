@@ -101,6 +101,10 @@
             font-weight: bold;
             fill: #f9fafb; /* gray-50 */
         }
+        #har-diagram-svg .timeline-icon {
+            font-size: 16px;
+            cursor: pointer;
+        }
         /* IDE Syntax Highlighting Styles */
         .code-editor-wrapper {
             position: relative;
@@ -165,6 +169,7 @@
                         <a href="#har" class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">HAR Analyzer</a>
                         <a href="#ide" class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">IDE</a>
                         <a href="#crypto" class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Encode/Encrypt</a>
+                        <a href="#about" class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">About You</a>
                     </nav>
                 </div>
             </div>
@@ -360,6 +365,43 @@
                 <div id="crypto-error" class="mt-4 text-red-400 h-6"></div>
             </div>
 
+            <!-- About You Panel -->
+            <div id="about" class="tool-panel">
+                 <h2 class="text-2xl font-bold text-white mb-4">About You</h2>
+                 <div class="space-y-6">
+                    <!-- Browser Info -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-indigo-400 mb-2">Browser Information</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-800 p-4 rounded-lg">
+                            <div class="font-medium text-gray-400">IP Address:</div><div class="font-mono" id="info-ip">Loading...</div>
+                            <div class="font-medium text-gray-400">User Agent:</div><div class="font-mono text-sm" id="info-user-agent"></div>
+                            <div class="font-medium text-gray-400">Language:</div><div class="font-mono" id="info-language"></div>
+                            <div class="font-medium text-gray-400">Cookies Enabled:</div><div class="font-mono" id="info-cookies"></div>
+                            <div class="font-medium text-gray-400">Online Status:</div><div class="font-mono" id="info-online"></div>
+                            <div class="font-medium text-gray-400">Proxy/VPN:</div><div class="font-mono text-sm">Not reliably detectable from the browser.</div>
+                        </div>
+                    </div>
+                    <!-- System Info -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-indigo-400 mb-2">System Information</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-800 p-4 rounded-lg">
+                            <div class="font-medium text-gray-400">Operating System:</div><div class="font-mono" id="info-os"></div>
+                            <div class="font-medium text-gray-400">CPU Cores:</div><div class="font-mono" id="info-cpu"></div>
+                            <div class="font-medium text-gray-400">Device Memory:</div><div class="font-mono" id="info-memory"></div>
+                            <div class="font-medium text-gray-400">Screen Resolution:</div><div class="font-mono" id="info-screen"></div>
+                            <div class="font-medium text-gray-400">Device Pixel Ratio:</div><div class="font-mono" id="info-pixel-ratio"></div>
+                        </div>
+                    </div>
+                     <!-- PII Note -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-indigo-400 mb-2">Privacy & PII</h3>
+                        <div class="bg-gray-800 p-4 rounded-lg text-gray-400 text-sm">
+                            <p>This page displays information that any website can access through standard browser APIs. Modern browsers have strong privacy protections to prevent websites from accessing sensitive Personally Identifiable Information (PII) like your name, email address, files on your computer, or exact location without your explicit permission. Information like your browsing history is also kept private and is not accessible to websites.</p>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+
         </main>
     </div>
 
@@ -373,6 +415,18 @@
             <div id="har-modal-content" class="p-4 overflow-y-auto"></div>
         </div>
     </div>
+
+    <!-- HAR Timeline Modal -->
+    <div id="har-timeline-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-gray-700">
+                <h3 id="har-timeline-title" class="text-xl font-bold text-white">Request Timeline</h3>
+                <button id="har-timeline-close" class="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <div id="har-timeline-content" class="p-4 overflow-y-auto"></div>
+        </div>
+    </div>
+
 
     <!-- Message Box -->
     <div id="message-box" class="fixed top-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg transform translate-x-[150%] transition-transform duration-300 ease-in-out">
@@ -403,6 +457,10 @@
                     link.classList.toggle('text-gray-300', !isActive);
                     link.classList.toggle('hover:bg-gray-700', !isActive);
                 });
+
+                if (targetId === 'about') {
+                    populateAboutYouInfo();
+                }
             }
             navLinks.forEach(link => link.addEventListener('click', e => {
                 e.preventDefault();
@@ -440,7 +498,7 @@
                 return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             }
 
-            // --- Auto Formatter Logic (Updated for Multi-level Decoding) ---
+            // --- Auto Formatter Logic ---
             const formatterInput = document.getElementById('formatter-input');
             const formatterOutputCode = document.querySelector('#formatter-output code');
             const clearFormatBtn = document.getElementById('clear-format-btn');
@@ -665,6 +723,10 @@
             const harModalTitle = document.getElementById('har-modal-title');
             const harModalContent = document.getElementById('har-modal-content');
             const harModalClose = document.getElementById('har-modal-close');
+            const harTimelineModal = document.getElementById('har-timeline-modal');
+            const harTimelineTitle = document.getElementById('har-timeline-title');
+            const harTimelineContent = document.getElementById('har-timeline-content');
+            const harTimelineClose = document.getElementById('har-timeline-close');
             let harData = null;
 
             harFileInput.addEventListener('change', (event) => {
@@ -724,7 +786,7 @@
                 const participants = ['Browser', ...selectedHosts];
                 const participantX = {};
                 const padding = 100;
-                const width = Math.max(participants.length * 150 + padding * 2, harDiagramSvg.parentElement.clientWidth);
+                const width = Math.max(participants.length * 180 + padding * 2, harDiagramSvg.parentElement.clientWidth);
                 const height = filteredEntries.length * 80 + 100;
                 harDiagramSvg.setAttribute('width', width); harDiagramSvg.setAttribute('height', height);
                 participants.forEach((p, i) => {
@@ -742,14 +804,21 @@
                     const browserX = participantX['Browser'];
                     const hostX = participantX[new URL(entry.request.url).hostname];
                     if (hostX === undefined) return;
+
                     const reqGroup = createInteractionGroup(entry, 'request');
                     reqGroup.appendChild(createArrow(browserX, hostX, y, 'req-arrow'));
                     reqGroup.appendChild(createText(`${entry.request.method} ${new URL(entry.request.url).pathname}`, browserX, hostX, y - 5));
                     harDiagramSvg.appendChild(reqGroup);
+
                     const resGroup = createInteractionGroup(entry, 'response');
                     resGroup.appendChild(createArrow(hostX, browserX, y + 30, 'res-arrow'));
                     resGroup.appendChild(createText(`${entry.response.status} ${entry.response.statusText}`, hostX, browserX, y + 25));
                     harDiagramSvg.appendChild(resGroup);
+
+                    const timelineGroup = createTimelineButtonGroup(entry);
+                    const midX = (browserX + hostX) / 2;
+                    timelineGroup.setAttribute('transform', `translate(${midX + 60}, ${y + 15})`);
+                    harDiagramSvg.appendChild(timelineGroup);
                 });
             }
 
@@ -759,6 +828,18 @@
                 g.dataset.entryIndex = harData.log.entries.indexOf(entry);
                 g.dataset.type = type;
                 g.addEventListener('click', showHarDetails);
+                return g;
+            }
+
+            function createTimelineButtonGroup(entry) {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'interaction');
+                g.dataset.entryIndex = harData.log.entries.indexOf(entry);
+                g.addEventListener('click', showHarTimeline);
+                const icon = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                icon.setAttribute('class', 'timeline-icon');
+                icon.textContent = '⏱️';
+                g.appendChild(icon);
                 return g;
             }
 
@@ -793,7 +874,51 @@
                 harModalContent.innerHTML = contentHTML;
                 harModal.classList.remove('hidden');
             }
+
+            function showHarTimeline(event) {
+                event.stopPropagation();
+                const g = event.currentTarget;
+                const entry = harData.log.entries[g.dataset.entryIndex];
+                const timings = entry.timings;
+                const totalTime = entry.time;
+
+                harTimelineTitle.textContent = `Timeline for: ${entry.request.url.substring(0, 50)}...`;
+
+                const phases = [
+                    { name: 'Blocked', time: timings.blocked, color: 'bg-gray-500' },
+                    { name: 'DNS Lookup', time: timings.dns, color: 'bg-yellow-500' },
+                    { name: 'Connecting', time: timings.connect, color: 'bg-orange-500' },
+                    { name: 'Sending', time: timings.send, color: 'bg-red-500' },
+                    { name: 'Waiting (TTFB)', time: timings.wait, color: 'bg-purple-500' },
+                    { name: 'Receiving', time: timings.receive, color: 'bg-blue-500' },
+                ];
+
+                let contentHTML = `<div class="space-y-3 text-sm">`;
+                contentHTML += `<div><strong>Total Time:</strong> ${totalTime.toFixed(2)} ms</div>`;
+                contentHTML += `<div class="w-full bg-gray-700 rounded-full h-6 flex text-white text-xs items-center overflow-hidden">`;
+                phases.forEach(phase => {
+                    if (phase.time > 0) {
+                        const percentage = (phase.time / totalTime) * 100;
+                        if (percentage > 0.1) {
+                            contentHTML += `<div class="${phase.color} h-full flex items-center justify-center" style="width: ${percentage}%" title="${phase.name}: ${phase.time.toFixed(2)} ms">${percentage > 10 ? phase.name : ''}</div>`;
+                        }
+                    }
+                });
+                contentHTML += `</div>`;
+                contentHTML += `<ul class="list-disc list-inside mt-4 space-y-1">`;
+                phases.forEach(phase => {
+                    if (phase.time >= 0) {
+                        contentHTML += `<li><span class="inline-block w-4 h-4 rounded-sm ${phase.color} mr-2 align-middle"></span><strong>${phase.name}:</strong> ${phase.time.toFixed(2)} ms</li>`;
+                    }
+                });
+                contentHTML += `</ul></div>`;
+
+                harTimelineContent.innerHTML = contentHTML;
+                harTimelineModal.classList.remove('hidden');
+            }
+
             harModalClose.addEventListener('click', () => harModal.classList.add('hidden'));
+            harTimelineClose.addEventListener('click', () => harTimelineModal.classList.add('hidden'));
 
             // --- IDE Logic ---
             const ideRunBtn = document.getElementById('ide-run-btn');
@@ -941,7 +1066,7 @@
             }
 
             async function aesEncrypt(text, password) {
-                const salt = new TextEncoder().encode('a-static-salt-for-this-tool'); // Use a static salt for simplicity
+                const salt = crypto.getRandomValues(new Uint8Array(16)); 
                 const iv = crypto.getRandomValues(new Uint8Array(12));
                 const textEncoder = new TextEncoder();
                 const data = textEncoder.encode(text);
@@ -951,7 +1076,7 @@
                     textEncoder.encode(password),
                     { name: 'PBKDF2' },
                     false,
-                    ['deriveBits', 'deriveKey']
+                    ['deriveKey']
                 );
 
                 const key = await crypto.subtle.deriveKey(
@@ -959,7 +1084,7 @@
                     keyMaterial,
                     { name: 'AES-GCM', length: 256 },
                     true,
-                    ['encrypt', 'decrypt']
+                    ['encrypt']
                 );
 
                 const encrypted = await crypto.subtle.encrypt(
@@ -968,12 +1093,38 @@
                     data
                 );
 
-                const combined = new Uint8Array(iv.length + encrypted.byteLength);
-                combined.set(iv);
-                combined.set(new Uint8Array(encrypted), iv.length);
+                const combined = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
+                combined.set(salt);
+                combined.set(iv, salt.length);
+                combined.set(new Uint8Array(encrypted), salt.length + iv.length);
 
-                // Return as Base64 string for easy storage/transport
                 return btoa(String.fromCharCode.apply(null, combined));
+            }
+
+            // --- About You Logic ---
+            let ipFetched = false;
+            function populateAboutYouInfo() {
+                document.getElementById('info-user-agent').textContent = navigator.userAgent || 'N/A';
+                document.getElementById('info-language').textContent = navigator.language || 'N/A';
+                document.getElementById('info-cookies').textContent = navigator.cookieEnabled ? 'Enabled' : 'Disabled';
+                document.getElementById('info-online').textContent = navigator.onLine ? 'Online' : 'Offline';
+                document.getElementById('info-os').textContent = navigator.platform || 'N/A';
+                document.getElementById('info-cpu').textContent = navigator.hardwareConcurrency || 'N/A';
+                document.getElementById('info-memory').textContent = navigator.deviceMemory ? `${navigator.deviceMemory} GB (approx.)` : 'N/A';
+                document.getElementById('info-screen').textContent = `${screen.width} x ${screen.height}`;
+                document.getElementById('info-pixel-ratio').textContent = window.devicePixelRatio || 'N/A';
+
+                if (!ipFetched) {
+                    fetch('https://api.ipify.org?format=json')
+                        .then(response => response.json())
+                        .then(data => {
+                            document.getElementById('info-ip').textContent = data.ip;
+                            ipFetched = true;
+                        })
+                        .catch(() => {
+                            document.getElementById('info-ip').textContent = 'Could not fetch';
+                        });
+                }
             }
 
         });
