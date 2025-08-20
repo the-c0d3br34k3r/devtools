@@ -95,11 +95,11 @@
             marker-end: url(#arrowhead-res);
         }
         #har-diagram-svg .slow-arrow {
-            stroke: #f87171; /* red-400 */
+            stroke: #facc15; /* yellow-400 */
             stroke-width: 2.5;
         }
         #har-diagram-svg .large-text {
-            fill: #f87171; /* red-400 */
+            fill: #facc15; /* yellow-400 */
             font-weight: bold;
         }
         #har-diagram-svg .interaction {
@@ -154,6 +154,12 @@
         .code-editor-wrapper > pre code {
              white-space: pre-wrap;
              word-break: break-all;
+        }
+        /* HAR Modal Content Formatting */
+        #har-modal-content pre, #har-modal-content code {
+            white-space: pre-wrap;
+            word-break: break-all;
+            overflow-wrap: break-word;
         }
     </style>
 </head>
@@ -422,22 +428,22 @@
     </div>
 
     <!-- HAR Details Modal -->
-    <div id="har-details-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden">
+    <div id="har-details-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center p-4 border-b border-gray-700">
-                <h3 id="har-modal-title" class="text-xl font-bold text-white">Interaction Details</h3>
-                <button id="har-modal-close" class="text-gray-400 hover:text-white">&times;</button>
+                <h3 id="har-modal-title" class="text-xl font-bold text-white truncate pr-4">Interaction Details</h3>
+                <button id="har-modal-close" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
             </div>
             <div id="har-modal-content" class="p-4 overflow-y-auto"></div>
         </div>
     </div>
     
     <!-- HAR Timeline Modal -->
-    <div id="har-timeline-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden">
+    <div id="har-timeline-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center p-4 border-b border-gray-700">
-                <h3 id="har-timeline-title" class="text-xl font-bold text-white">Request Timeline</h3>
-                <button id="har-timeline-close" class="text-gray-400 hover:text-white">&times;</button>
+                <h3 id="har-timeline-title" class="text-xl font-bold text-white truncate pr-4">Request Timeline</h3>
+                <button id="har-timeline-close" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
             </div>
             <div id="har-timeline-content" class="p-4 overflow-y-auto"></div>
         </div>
@@ -905,16 +911,74 @@
                 const type = g.dataset.type;
                 const data = (type === 'request') ? entry.request : entry.response;
                 harModalTitle.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)}: ${data.url || entry.request.url}`;
-                let contentHTML = '<h4>Headers</h4><pre class="bg-gray-900 p-2 rounded-md text-sm whitespace-pre-wrap break-all"><code>';
-                data.headers.forEach(h => contentHTML += `${h.name}: ${h.value}\n`);
-                contentHTML += '</code></pre>';
+                
+                let contentHTML = '<h4>Headers</h4><code class="block bg-gray-900 p-2 rounded-md text-sm whitespace-pre-wrap break-all">';
+                data.headers.forEach(h => {
+                    const mdnUrl = `https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/${h.name}`;
+                    contentHTML += `<a href="${mdnUrl}" target="_blank" rel="noopener noreferrer" class="text-indigo-400 hover:underline">${escapeHtml(h.name)}</a>: ${escapeHtml(h.value)}\n`;
+                });
+                contentHTML += '</code>';
+                
                 const body = (type === 'request') ? data.postData : data.content;
                 if (body && body.text) {
-                    contentHTML += '<h4 class="mt-4">Body</h4><pre class="bg-gray-900 p-2 rounded-md text-sm whitespace-pre-wrap break-all"><code>';
-                    try { contentHTML += JSON.stringify(JSON.parse(body.text), null, 2); } catch (e) { contentHTML += escapeHtml(body.text); }
-                    contentHTML += '</code></pre>';
+                    let processedBody = body.text;
+                    let decodingChain = [];
+                    let lastInput = '';
+                    if(body.encoding === 'base64') {
+                        try {
+                           processedBody = atob(processedBody);
+                           decodingChain.push('Base64');
+                        } catch(e) { /* Not valid base64, proceed with original text */ processedBody = body.text; }
+                    }
+                    while(processedBody !== lastInput) {
+                        lastInput = processedBody;
+                        try {
+                            if (processedBody.includes('%')) {
+                                const decoded = decodeURIComponent(processedBody.replace(/\+/g, ' '));
+                                if (decoded !== processedBody) {
+                                    processedBody = decoded;
+                                    decodingChain.push('URL Encoded');
+                                }
+                            }
+                        } catch (e) {}
+                    }
+
+                    let language = 'plain';
+                    const mimeType = body.mimeType || '';
+                    const url = new URL(entry.request.url);
+                    const extension = url.pathname.split('.').pop().toLowerCase();
+
+                    if (mimeType.startsWith('image/')) language = mimeType;
+                    else if (mimeType.includes('json') || extension === 'json') language = 'json';
+                    else if (mimeType.includes('javascript') || extension === 'js') language = 'javascript';
+                    else if (mimeType.includes('html') || extension === 'html') language = 'markup';
+                    else if (mimeType.includes('xml') || extension === 'xml') language = 'markup';
+                    else if (mimeType.includes('css') || extension === 'css') language = 'css';
+                    if (language === 'plain' && processedBody.trim().startsWith('{') && processedBody.trim().endsWith('}')) {
+                        try { JSON.parse(processedBody); language = 'json'; } catch(e) {}
+                    }
+                    
+                    let pillsHTML = '';
+                    if (decodingChain.length > 0) {
+                        pillsHTML += `<span class="text-xs bg-gray-700 text-indigo-300 px-2 py-1 rounded-full">${decodingChain.join(' ➔ ')}</span>`;
+                    }
+                    pillsHTML += `<span class="text-xs bg-gray-700 text-indigo-300 px-2 py-1 rounded-full">${language.toUpperCase()}</span>`;
+
+                    contentHTML += `<div class="flex justify-between items-center mt-4 mb-2"><h4>Body</h4><div class="flex items-center space-x-2">${pillsHTML}</div></div>`;
+
+                    if (language.startsWith('image/')) {
+                         const imgSrc = `data:${language};base64,${btoa(processedBody)}`;
+                         contentHTML += `<div class="bg-white p-2 rounded-md"><img src="${imgSrc}" class="max-w-full h-auto"></div>`;
+                    } else {
+                        let finalBody = processedBody;
+                        if (language === 'json') {
+                            try { finalBody = JSON.stringify(JSON.parse(processedBody), null, 2); } catch(e) { finalBody = processedBody; }
+                        }
+                        contentHTML += `<pre class="bg-gray-900 p-2 rounded-md"><code class="language-${language}">${escapeHtml(finalBody)}</code></pre>`;
+                    }
                 }
                 harModalContent.innerHTML = contentHTML;
+                Prism.highlightAllUnder(harModalContent);
                 harModal.classList.remove('hidden');
             }
             
@@ -960,7 +1024,9 @@
                 harTimelineModal.classList.remove('hidden');
             }
 
+            harModal.addEventListener('click', (e) => { if (e.target === harModal) harModal.classList.add('hidden'); });
             harModalClose.addEventListener('click', () => harModal.classList.add('hidden'));
+            harTimelineModal.addEventListener('click', (e) => { if (e.target === harTimelineModal) harTimelineModal.classList.add('hidden'); });
             harTimelineClose.addEventListener('click', () => harTimelineModal.classList.add('hidden'));
 
             // --- IDE Logic ---
