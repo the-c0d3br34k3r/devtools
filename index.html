@@ -181,6 +181,7 @@
                         <a href="#diff" class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Diff Checker</a>
                         <a href="#regex" class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Regex Tester</a>
                         <a href="#har" class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">HAR Analyzer</a>
+                        <a href="#sql" class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">SQL on CSV</a>
                         <a href="#ide" class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">IDE</a>
                         <a href="#crypto" class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Encode/Encrypt</a>
                         <a href="#about" class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">About You</a>
@@ -321,6 +322,62 @@
                                     <marker id="arrowhead-res" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#4ade80" /></marker>
                                 </defs>
                             </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SQL on CSV Panel -->
+            <div id="sql" class="tool-panel">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-bold text-white">SQL on CSV Files</h2>
+                    <div class="flex items-center space-x-2">
+                        <span id="sql-status" class="text-sm text-gray-400">Loading Python Environment...</span>
+                        <button id="sql-run-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+                            <span>Run Query</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-12 gap-4 h-[calc(100vh-18rem)]">
+                    <!-- Left Column: File Loader & Schema -->
+                    <div class="col-span-12 md:col-span-3 flex flex-col space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label for="sql-folder-input" class="block text-sm font-medium">Load CSV files</label>
+                                <button id="sql-clear-btn" class="text-xs text-indigo-400 hover:underline hidden" title="Clear all loaded files and reset">Clear All</button>
+                            </div>
+                            <input id="sql-folder-input" type="file" multiple accept=".csv" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" disabled/>
+                        </div>
+                        <div class="flex-grow flex flex-col min-h-0">
+                            <h3 class="text-lg font-medium text-white mb-2">Tables Schema</h3>
+                            <div id="sql-tables-list" class="flex-grow overflow-y-auto bg-gray-800 border border-gray-700 rounded-md p-3 space-y-4">
+                                <p class="text-gray-500">Load CSV files to see tables.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Right Column: Editor & Results -->
+                    <div class="col-span-12 md:col-span-9 flex flex-col space-y-4">
+                        <!-- SQL Editor -->
+                        <div class="flex flex-col flex-grow h-1/2 min-h-[200px]">
+                            <label for="sql-code-input" class="text-sm font-medium mb-2">SQL Query</label>
+                            <div class="code-editor-wrapper flex-grow">
+                                <textarea id="sql-code-input" spellcheck="false" placeholder="-- Load some CSV files to start
+-- Table names are derived from filenames
+-- e.g., SELECT * FROM my_data_file LIMIT 10;"></textarea>
+                                <pre id="sql-highlighting" aria-hidden="true"><code class="language-sql"></code></pre>
+                            </div>
+                        </div>
+                        <!-- Results -->
+                        <div class="flex flex-col flex-grow h-1/2">
+                            <label for="sql-results-table" class="text-sm font-medium mb-2">Results</label>
+                            <div id="sql-results-container" class="flex-grow bg-gray-800 border border-gray-700 rounded-md overflow-auto">
+                                <div id="sql-results-placeholder" class="p-4 text-gray-500">Query results will appear here.</div>
+                                <table id="sql-results-table" class="w-full text-sm text-left text-gray-400 hidden">
+                                    <thead class="text-xs text-gray-300 uppercase bg-gray-700 sticky top-0"></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1036,7 +1093,19 @@
             const ideHighlightingPre = document.getElementById('ide-highlighting');
             const ideHighlightingCode = ideHighlightingPre.querySelector('code');
             const ideOutput = document.getElementById('ide-output');
+            const sqlStatus = document.getElementById('sql-status');
+            const sqlClearBtn = document.getElementById('sql-clear-btn');
+            const sqlFolderInput = document.getElementById('sql-folder-input');
+            const sqlRunBtn = document.getElementById('sql-run-btn');
+            const sqlTablesList = document.getElementById('sql-tables-list');
+            const sqlCodeInput = document.getElementById('sql-code-input');
+            const sqlHighlightingPre = document.getElementById('sql-highlighting');
+            const sqlHighlightingCode = sqlHighlightingPre.querySelector('code');
+            const sqlResultsContainer = document.getElementById('sql-results-container');
+            const sqlResultsTable = document.getElementById('sql-results-table');
+            const sqlResultsPlaceholder = document.getElementById('sql-results-placeholder');
             let pyodide = null;
+            let loadedSqlFiles = {};
             ideCodeInput.value = `import micropip
 await micropip.install('numpy')
 import numpy as np
@@ -1056,21 +1125,99 @@ print(f"Mean of the array: {np.mean(a)}")`;
             ideCodeInput.addEventListener('input', syncHighlighting);
             ideCodeInput.addEventListener('scroll', syncHighlighting);
             
+            function syncSqlHighlighting() {
+                const code = sqlCodeInput.value;
+                sqlHighlightingCode.textContent = code;
+                Prism.highlightElement(sqlHighlightingCode);
+                sqlHighlightingPre.scrollTop = sqlCodeInput.scrollTop;
+                sqlHighlightingPre.scrollLeft = sqlCodeInput.scrollLeft;
+            }
+            sqlCodeInput.addEventListener('input', syncSqlHighlighting);
+            sqlCodeInput.addEventListener('scroll', syncSqlHighlighting);
+
             async function initializePyodide() {
                 try {
+                    // Common setup
+                    ideOutput.textContent = 'Python environment loading...\n';
+                    sqlStatus.textContent = 'Loading Python Environment...';
                     pyodide = await loadPyodide();
-                    ideOutput.textContent += 'Python environment loaded.\nLoading micropip...\n';
-                    await pyodide.loadPackage("micropip");
+                    ideOutput.textContent += 'Python environment loaded.\n';
+                    sqlStatus.textContent = 'Loading Packages...';
+
+                    // Load packages that are part of the Pyodide distribution
+                    ideOutput.textContent += 'Loading core packages (pandas, micropip)...\n';
+                    await pyodide.loadPackage(["micropip", "pandas"]);
+
+                    ideOutput.textContent += 'Core packages loaded.\nInstalling DuckDB via micropip...\n';
+                    sqlStatus.textContent = 'Installing DuckDB...';
+                    const micropip = pyodide.pyimport("micropip");
+                    await micropip.install('https://duckdb.github.io/duckdb-pyodide/wheels/duckdb-1.2.0-cp311-cp311-emscripten_3_1_46_wasm32.whl');
+                    // await pyodide.loadPackage("duckdb");
+
+                    ideOutput.textContent += 'DuckDB installed.\n';
+                    sqlStatus.textContent = 'Initializing DuckDB...';
+
+                    // Setup for SQL Panel
+                    await pyodide.runPythonAsync(`
+                        import pandas as pd
+                        import io
+                        import duckdb
+                        import json
+ 
+                        con = duckdb.connect(database=':memory:', read_only=False)
+ 
+                        def register_duckdb_tables(files_dict_json):
+                            files_dict = json.loads(files_dict_json)
+                            table_info = {}
+                            # Clear existing tables to prevent conflicts on re-upload
+                            tables_to_drop = con.execute("SHOW TABLES").fetchall()
+                            for table_name_tuple in tables_to_drop:
+                                con.execute(f'DROP TABLE "{table_name_tuple[0]}"')
+ 
+                            for filename, content in files_dict.items():
+                                try:
+                                    # Sanitize filename to create a valid table name
+                                    table_name = "".join(c if c.isalnum() else '_' for c in filename.split('.')[0])
+                                    if not table_name: table_name = "unnamed_table"
+                                     
+                                    df = pd.read_csv(io.StringIO(content))
+                                    con.register(table_name, df)
+                                    table_info[table_name] = { 'columns': df.columns.tolist(), 'rows': len(df) }
+                                except Exception as e:
+                                    table_info[filename] = {'error': str(e)}
+                            return json.dumps(table_info)
+ 
+                        def run_duckdb_query(query):
+                            try:
+                                result_df = con.execute(query).fetchdf()
+                                return result_df.to_json(orient='records', date_format='iso')
+                            except Exception as e:
+                                # Return error in a structure that JS can easily identify
+                                return json.dumps([{'error': str(e)}])
+                    `);
+                    sqlStatus.textContent = 'Ready. Load CSVs.';
+                    sqlFolderInput.disabled = false;
+ 
+                    // Setup for IDE Panel
                     ideRunBtnText.textContent = 'Run';
                     ideRunBtn.disabled = false;
-                    ideOutput.textContent += 'Micropip ready. You can now install packages.\n';
+                    ideOutput.textContent += 'Ready. You can run Python code or install packages with micropip.\n';
                 } catch (error) {
+                    const errorMsg = `Error loading Python environment: ${error.message}\n`;
+                    console.error("Pyodide initialization error:", error);
                     ideRunBtnText.textContent = 'Error';
-                    ideOutput.textContent += `Error loading Python environment: ${error}\n`;
+                    ideOutput.textContent += errorMsg;
+                    sqlStatus.textContent = 'Environment Load Error.';
+                    sqlRunBtn.disabled = true;
+                    sqlFolderInput.disabled = true;
                 }
             }
             initializePyodide();
             
+            sqlFolderInput.addEventListener('change', handleSqlFolderSelect);
+            sqlClearBtn.addEventListener('click', resetSqlTool);
+            sqlRunBtn.addEventListener('click', runSqlQuery);
+
             ideRunBtn.addEventListener('click', async () => {
                 if (!pyodide) {
                     ideOutput.textContent = 'Python environment is not ready yet.';
@@ -1096,6 +1243,164 @@ print(f"Mean of the array: {np.mean(a)}")`;
                 }
             });
             syncHighlighting();
+            syncSqlHighlighting();
+
+            // --- SQL on CSV Logic ---
+            function resetSqlTool() {
+                loadedSqlFiles = {};
+                sqlTablesList.innerHTML = '<p class="text-gray-500">Load CSV files to see tables.</p>';
+                sqlCodeInput.value = `-- Load some CSV files to start
+-- Table names are derived from filenames
+-- e.g., SELECT * FROM my_data_file LIMIT 10;`;
+                syncSqlHighlighting();
+                sqlResultsTable.classList.add('hidden');
+                sqlResultsPlaceholder.classList.remove('hidden');
+                sqlResultsPlaceholder.textContent = 'Query results will appear here.';
+                sqlResultsPlaceholder.classList.remove('text-red-400');
+                sqlRunBtn.disabled = true;
+                sqlFolderInput.value = null;
+                sqlClearBtn.classList.add('hidden');
+                sqlStatus.textContent = 'Ready. Load CSVs.';
+
+                if (pyodide) {
+                    pyodide.runPythonAsync(`
+                        if 'con' in globals():
+                            tables_to_drop = con.execute("SHOW TABLES").fetchall()
+                            for table_name_tuple in tables_to_drop:
+                                con.execute(f'DROP TABLE "{table_name_tuple[0]}"')
+                    `);
+                }
+            }
+
+            async function handleSqlFolderSelect(event) {
+                const newFiles = event.target.files;
+                if (!newFiles || newFiles.length === 0) return;
+
+                sqlStatus.textContent = 'Reading files...';
+                sqlTablesList.innerHTML = '<p class="text-gray-500">Loading...</p>';
+                sqlRunBtn.disabled = true;
+
+                const csvFiles = Array.from(newFiles).filter(f => f.name.endsWith('.csv'));
+                
+                const readerPromises = csvFiles.map(file => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            loadedSqlFiles[file.name] = e.target.result; // Add/overwrite file content
+                            resolve();
+                        };
+                        reader.onerror = reject;
+                        reader.readAsText(file);
+                    });
+                });
+    
+                try {
+                    await Promise.all(readerPromises);
+
+                    if (Object.keys(loadedSqlFiles).length === 0) {
+                        sqlTablesList.innerHTML = '<p class="text-red-400">No .csv files found in selection.</p>';
+                        sqlStatus.textContent = 'Ready. Load CSVs.';
+                        return;
+                    }
+
+                    sqlStatus.textContent = 'Registering tables in DuckDB...';
+                    
+                    const registerTables = pyodide.globals.get('register_duckdb_tables');
+                    const tablesJson = await registerTables(JSON.stringify(loadedSqlFiles));
+                    const tables = JSON.parse(tablesJson);
+
+                    let tablesHtml = '';
+                    Object.entries(tables).forEach(([name, info]) => {
+                        if (info.error) {
+                            tablesHtml += `<div class="bg-gray-900 p-2 rounded"><h4 class="font-bold text-red-400">${escapeHtml(name)}</h4><p class="text-xs text-red-400">Error: ${escapeHtml(info.error)}</p></div>`;
+                        } else {
+                            tablesHtml += `<div class="bg-gray-900 p-2 rounded"><h4 class="font-bold text-indigo-300">${escapeHtml(name)}</h4><p class="text-xs text-gray-400">${info.rows} rows</p><ul class="text-xs text-gray-500 list-disc list-inside pl-2">${info.columns.map(col => `<li>${escapeHtml(col)}</li>`).join('')}</ul></div>`;
+                        }
+                    });
+                    sqlTablesList.innerHTML = tablesHtml;
+                    sqlClearBtn.classList.remove('hidden');
+                    sqlStatus.textContent = 'Ready to query.';
+                    sqlRunBtn.disabled = false;
+
+                    if (!sqlCodeInput.value.trim() || sqlCodeInput.value.startsWith('-- Load')) {
+                        const firstTable = Object.keys(tables).find(t => !tables[t].error);
+                        if (firstTable) {
+                            sqlCodeInput.value = `SELECT * FROM ${firstTable} LIMIT 10;`;
+                            syncSqlHighlighting();
+                        }
+                    }
+                } catch (error) {
+                    sqlTablesList.innerHTML = `<p class="text-red-400">Error reading files: ${error.message}</p>`;
+                    sqlStatus.textContent = 'Error.';
+                } finally {
+                    // Reset file input to allow selecting the same file again
+                    event.target.value = null;
+                }
+            }
+
+            async function runSqlQuery() {
+                const query = sqlCodeInput.value;
+                if (!query.trim()) return;
+
+                sqlRunBtn.disabled = true;
+                sqlStatus.textContent = 'Running query...';
+                sqlResultsPlaceholder.textContent = 'Running query...';
+                sqlResultsPlaceholder.classList.remove('text-red-400');
+                sqlResultsTable.classList.add('hidden');
+                sqlResultsPlaceholder.classList.remove('hidden');
+
+                try {
+                    const runQuery = pyodide.globals.get('run_duckdb_query');
+                    const resultJson = await runQuery(query);
+                    const result = JSON.parse(resultJson);
+
+                    if (result.length > 0 && result[0].error) {
+                        sqlResultsPlaceholder.textContent = `Query Error: ${result[0].error}`;
+                        sqlResultsPlaceholder.classList.add('text-red-400');
+                    } else if (result.length === 0) {
+                        sqlResultsPlaceholder.textContent = 'Query returned no results.';
+                    } else {
+                        renderSqlResults(result);
+                    }
+                } catch (error) {
+                    sqlResultsPlaceholder.textContent = `Execution Error: ${error.message}`;
+                    sqlResultsPlaceholder.classList.add('text-red-400');
+                } finally {
+                    sqlRunBtn.disabled = false;
+                    sqlStatus.textContent = 'Ready to query.';
+                }
+            }
+
+            function renderSqlResults(data) {
+                const thead = sqlResultsTable.querySelector('thead');
+                const tbody = sqlResultsTable.querySelector('tbody');
+                thead.innerHTML = '';
+                tbody.innerHTML = '';
+                const headers = Object.keys(data[0]);
+                const headerRow = document.createElement('tr');
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.scope = 'col';
+                    th.className = 'px-6 py-3';
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'bg-gray-800 border-b border-gray-700 hover:bg-gray-600';
+                    headers.forEach(header => {
+                        const td = document.createElement('td');
+                        td.className = 'px-6 py-4';
+                        const value = row[header];
+                        td.textContent = (value === null) ? 'NULL' : (value === undefined) ? '' : value;
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+                sqlResultsPlaceholder.classList.add('hidden');
+                sqlResultsTable.classList.remove('hidden');
+            }
 
             // --- Encode/Encrypt Logic ---
             const cryptoAlgorithm = document.getElementById('crypto-algorithm');
