@@ -330,24 +330,40 @@
             <!-- SQL on CSV Panel -->
             <div id="sql" class="tool-panel">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-2xl font-bold text-white">SQL on CSV Files</h2>
+                    <div class="flex items-center gap-4">
+                        <h2 class="text-2xl font-bold text-white">SQL on CSV Files</h2>
+                        <div class="flex items-center gap-2">
+                            <select id="sql-project-select" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2"></select>
+                            <button id="sql-delete-project-btn" title="Delete Selected Project" class="bg-red-600 hover:bg-red-700 text-white font-bold p-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed" disabled>&times;</button>
+                        </div>
+                    </div>
                     <div class="flex items-center space-x-2">
                         <span id="sql-status" class="text-sm text-gray-400">Loading Python Environment...</span>
-                        <button id="sql-run-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
-                            <span>Run Query</span>
-                        </button>
                     </div>
                 </div>
-                <div class="grid grid-cols-12 gap-4 h-[calc(100vh-18rem)]">
+                <div class="grid grid-cols-12 gap-4 h-[calc(100vh-20rem)]">
                     <!-- Left Column: File Loader & Schema -->
                     <div class="col-span-12 md:col-span-3 flex flex-col space-y-4">
                         <div>
                             <div class="flex justify-between items-center mb-2">
                                 <label for="sql-folder-input" class="block text-sm font-medium">Load CSV files</label>
-                                <button id="sql-clear-btn" class="text-xs text-indigo-400 hover:underline hidden" title="Clear all loaded files and reset">Clear All</button>
+                                <button id="sql-clear-btn" class="text-xs text-indigo-400 hover:underline hidden" title="Clear all loaded files and reset">Clear Files</button>
                             </div>
                             <input id="sql-folder-input" type="file" multiple accept=".csv" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" disabled/>
+                        </div>
+                        <div class="border-t border-gray-700 pt-4">
+                            <h3 class="text-lg font-medium text-white mb-2">Project Actions</h3>
+                            <div class="space-y-2">
+                                <input type="text" id="sql-project-name" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2" placeholder="Enter new project name...">
+                                <button id="sql-save-project-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md disabled:opacity-50" disabled>Save Project</button>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button id="sql-export-project-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md disabled:opacity-50" disabled>Export</button>
+                                    <label for="sql-import-project-input" class="w-full text-center bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md cursor-pointer">
+                                        Import
+                                        <input type="file" id="sql-import-project-input" class="hidden" accept=".json">
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                         <div class="flex-grow flex flex-col min-h-0">
                             <h3 class="text-lg font-medium text-white mb-2">Tables Schema</h3>
@@ -359,8 +375,18 @@
                     <!-- Right Column: Editor & Results -->
                     <div class="col-span-12 md:col-span-9 flex flex-col space-y-4">
                         <!-- SQL Editor -->
-                        <div class="flex flex-col flex-grow h-1/2 min-h-[200px]">
-                            <label for="sql-code-input" class="text-sm font-medium mb-2">SQL Query</label>
+                        <div class="flex flex-col flex-grow h-2/5 min-h-[150px]">
+                            <div class="flex justify-between items-center mb-2">
+                                <label for="sql-code-input" class="text-sm font-medium">SQL Query</label>
+                                <div class="flex items-center space-x-2">
+                                    <select id="sql-query-select" class="bg-gray-700 border border-gray-600 text-white text-xs rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-1"></select>
+                                    <button id="sql-save-query-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1 px-3 rounded-md text-xs disabled:opacity-50" disabled>Save Query</button>
+                                    <button id="sql-run-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+                                        <span>Run</span>
+                                    </button>
+                                </div>
+                            </div>
                             <div class="code-editor-wrapper flex-grow">
                                 <textarea id="sql-code-input" spellcheck="false" placeholder="-- Load some CSV files to start
 -- Table names are derived from filenames
@@ -369,7 +395,7 @@
                             </div>
                         </div>
                         <!-- Results -->
-                        <div class="flex flex-col flex-grow h-1/2">
+                        <div class="flex flex-col flex-grow h-3/5">
                             <label for="sql-results-table" class="text-sm font-medium mb-2">Results</label>
                             <div id="sql-results-container" class="flex-grow bg-gray-800 border border-gray-700 rounded-md overflow-auto">
                                 <div id="sql-results-placeholder" class="p-4 text-gray-500">Query results will appear here.</div>
@@ -1104,6 +1130,20 @@
             const sqlResultsContainer = document.getElementById('sql-results-container');
             const sqlResultsTable = document.getElementById('sql-results-table');
             const sqlResultsPlaceholder = document.getElementById('sql-results-placeholder');
+            const sqlProjectSelect = document.getElementById('sql-project-select');
+            const sqlProjectNameInput = document.getElementById('sql-project-name');
+            const sqlSaveProjectBtn = document.getElementById('sql-save-project-btn');
+            const sqlDeleteProjectBtn = document.getElementById('sql-delete-project-btn');
+            const sqlExportProjectBtn = document.getElementById('sql-export-project-btn');
+            const sqlImportProjectInput = document.getElementById('sql-import-project-input');
+            const sqlQuerySelect = document.getElementById('sql-query-select');
+            const sqlSaveQueryBtn = document.getElementById('sql-save-query-btn');
+
+            let currentProject = { name: null, files: {}, queries: [], activeQueryName: null };
+            let db;
+            const DB_NAME = 'DevToolsDB';
+            const DB_VERSION = 1;
+            const STORE_NAME = 'sql_projects';
             let pyodide = null;
             let loadedSqlFiles = {};
             ideCodeInput.value = `import micropip
@@ -1134,6 +1174,53 @@ print(f"Mean of the array: {np.mean(a)}")`;
             }
             sqlCodeInput.addEventListener('input', syncSqlHighlighting);
             sqlCodeInput.addEventListener('scroll', syncSqlHighlighting);
+
+            // --- IndexedDB Project Storage ---
+            function openDb() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(DB_NAME, DB_VERSION);
+                    request.onerror = () => reject("Error opening DB");
+                    request.onsuccess = () => {
+                        db = request.result;
+                        resolve(db);
+                    };
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains(STORE_NAME)) {
+                            db.createObjectStore(STORE_NAME, { keyPath: 'name' });
+                        }
+                    };
+                });
+            }
+
+            function getProjects() {
+                return new Promise((resolve) => {
+                    const transaction = db.transaction([STORE_NAME], 'readonly');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result);
+                });
+            }
+
+            function saveProject(project) {
+                return new Promise((resolve) => {
+                    const transaction = db.transaction([STORE_NAME], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    project.updatedAt = new Date();
+                    const request = store.put(project);
+                    request.onsuccess = () => resolve();
+                });
+            }
+
+            function deleteProject(projectName) {
+                return new Promise((resolve) => {
+                    const transaction = db.transaction([STORE_NAME], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.delete(projectName);
+                    request.onsuccess = () => resolve();
+                });
+            }
+
 
             async function initializePyodide() {
                 try {
@@ -1198,6 +1285,8 @@ print(f"Mean of the array: {np.mean(a)}")`;
                     sqlStatus.textContent = 'Ready. Load CSVs.';
                     sqlFolderInput.disabled = false;
  
+                    await openDb();
+                    await loadProjectList();
                     // Setup for IDE Panel
                     ideRunBtnText.textContent = 'Run';
                     ideRunBtn.disabled = false;
@@ -1217,6 +1306,12 @@ print(f"Mean of the array: {np.mean(a)}")`;
             sqlFolderInput.addEventListener('change', handleSqlFolderSelect);
             sqlClearBtn.addEventListener('click', resetSqlTool);
             sqlRunBtn.addEventListener('click', runSqlQuery);
+            sqlSaveProjectBtn.addEventListener('click', handleSaveProject);
+            sqlProjectSelect.addEventListener('change', handleLoadProject);
+            sqlDeleteProjectBtn.addEventListener('click', handleDeleteProject);
+            sqlExportProjectBtn.addEventListener('click', handleExportProject);
+            sqlImportProjectInput.addEventListener('change', handleImportProject);
+            sqlSaveQueryBtn.addEventListener('click', handleSaveQuery);
 
             ideRunBtn.addEventListener('click', async () => {
                 if (!pyodide) {
@@ -1246,10 +1341,10 @@ print(f"Mean of the array: {np.mean(a)}")`;
             syncSqlHighlighting();
 
             // --- SQL on CSV Logic ---
-            function resetSqlTool() {
+            function resetSqlTool(fullReset = true) {
                 loadedSqlFiles = {};
                 sqlTablesList.innerHTML = '<p class="text-gray-500">Load CSV files to see tables.</p>';
-                sqlCodeInput.value = `-- Load some CSV files to start
+                if (fullReset) sqlCodeInput.value = `-- Load some CSV files to start
 -- Table names are derived from filenames
 -- e.g., SELECT * FROM my_data_file LIMIT 10;`;
                 syncSqlHighlighting();
@@ -1257,10 +1352,12 @@ print(f"Mean of the array: {np.mean(a)}")`;
                 sqlResultsPlaceholder.classList.remove('hidden');
                 sqlResultsPlaceholder.textContent = 'Query results will appear here.';
                 sqlResultsPlaceholder.classList.remove('text-red-400');
-                sqlRunBtn.disabled = true;
+                sqlRunBtn.disabled = !fullReset;
                 sqlFolderInput.value = null;
                 sqlClearBtn.classList.add('hidden');
                 sqlStatus.textContent = 'Ready. Load CSVs.';
+                sqlSaveProjectBtn.disabled = true;
+                sqlSaveQueryBtn.disabled = true;
 
                 if (pyodide) {
                     pyodide.runPythonAsync(`
@@ -1270,6 +1367,123 @@ print(f"Mean of the array: {np.mean(a)}")`;
                                 con.execute(f'DROP TABLE "{table_name_tuple[0]}"')
                     `);
                 }
+            }
+
+            async function loadProjectList() {
+                const projects = await getProjects();
+                sqlProjectSelect.innerHTML = '<option value="">-- Select or Create Project --</option>';
+                projects.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)).forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.name;
+                    option.textContent = p.name;
+                    sqlProjectSelect.appendChild(option);
+                });
+            }
+
+            async function handleSaveProject() {
+                const projectName = sqlProjectNameInput.value.trim();
+                if (!projectName) {
+                    showMessage("Please enter a project name.");
+                    return;
+                }
+                currentProject.name = projectName;
+                currentProject.files = loadedSqlFiles;
+                currentProject.activeQueryName = sqlQuerySelect.value;
+
+                await saveProject(currentProject);
+                await loadProjectList();
+                sqlProjectSelect.value = projectName;
+                showMessage(`Project '${projectName}' saved.`);
+                updateProjectButtons();
+            }
+
+            async function handleLoadProject() {
+                const projectName = sqlProjectSelect.value;
+                if (!projectName) {
+                    currentProject = { name: null, files: {}, queries: [], activeQueryName: null };
+                    sqlProjectNameInput.value = '';
+                    resetSqlTool(true);
+                    updateProjectButtons();
+                    return;
+                }
+
+                const projects = await getProjects();
+                const projectToLoad = projects.find(p => p.name === projectName);
+                if (projectToLoad) {
+                    currentProject = projectToLoad;
+                    sqlProjectNameInput.value = currentProject.name;
+                    loadedSqlFiles = currentProject.files;
+                    await registerFilesAndDisplaySchema(false);
+                    loadQueryList();
+                    updateProjectButtons();
+                    showMessage(`Project '${projectName}' loaded.`);
+                }
+            }
+
+            async function handleDeleteProject() {
+                const projectName = sqlProjectSelect.value;
+                if (!projectName || !confirm(`Are you sure you want to delete the project '${projectName}'?`)) return;
+
+                await deleteProject(projectName);
+                await loadProjectList();
+                handleLoadProject(); // Resets to default state
+                showMessage(`Project '${projectName}' deleted.`);
+            }
+
+            function handleExportProject() {
+                if (!currentProject.name) return;
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentProject, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", `${currentProject.name}.json`);
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+                showMessage('Project exported.');
+            }
+
+            function handleImportProject(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const project = JSON.parse(e.target.result);
+                        if (project.name && project.files && project.queries) {
+                            await saveProject(project);
+                            await loadProjectList();
+                            sqlProjectSelect.value = project.name;
+                            await handleLoadProject();
+                            showMessage(`Project '${project.name}' imported and loaded.`);
+                        } else {
+                            showMessage('Invalid project file format.');
+                        }
+                    } catch (err) {
+                        showMessage('Error parsing project file.');
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = null; // Allow re-importing same file
+            }
+
+            function handleSaveQuery() {
+                const queryName = prompt("Enter a name for this query:", sqlQuerySelect.value || "New Query");
+                if (!queryName) return;
+
+                const existingQueryIndex = currentProject.queries.findIndex(q => q.name === queryName);
+                const newQuery = { name: queryName, sql: sqlCodeInput.value };
+
+                if (existingQueryIndex > -1) {
+                    currentProject.queries[existingQueryIndex] = newQuery;
+                } else {
+                    currentProject.queries.push(newQuery);
+                }
+                currentProject.activeQueryName = queryName;
+                loadQueryList();
+                if (currentProject.name) {
+                    handleSaveProject(); // Auto-save project when a query is saved
+                }
+                showMessage(`Query '${queryName}' saved.`);
             }
 
             async function handleSqlFolderSelect(event) {
@@ -1296,39 +1510,7 @@ print(f"Mean of the array: {np.mean(a)}")`;
     
                 try {
                     await Promise.all(readerPromises);
-
-                    if (Object.keys(loadedSqlFiles).length === 0) {
-                        sqlTablesList.innerHTML = '<p class="text-red-400">No .csv files found in selection.</p>';
-                        sqlStatus.textContent = 'Ready. Load CSVs.';
-                        return;
-                    }
-
-                    sqlStatus.textContent = 'Registering tables in DuckDB...';
-                    
-                    const registerTables = pyodide.globals.get('register_duckdb_tables');
-                    const tablesJson = await registerTables(JSON.stringify(loadedSqlFiles));
-                    const tables = JSON.parse(tablesJson);
-
-                    let tablesHtml = '';
-                    Object.entries(tables).forEach(([name, info]) => {
-                        if (info.error) {
-                            tablesHtml += `<div class="bg-gray-900 p-2 rounded"><h4 class="font-bold text-red-400">${escapeHtml(name)}</h4><p class="text-xs text-red-400">Error: ${escapeHtml(info.error)}</p></div>`;
-                        } else {
-                            tablesHtml += `<div class="bg-gray-900 p-2 rounded"><h4 class="font-bold text-indigo-300">${escapeHtml(name)}</h4><p class="text-xs text-gray-400">${info.rows} rows</p><ul class="text-xs text-gray-500 list-disc list-inside pl-2">${info.columns.map(col => `<li>${escapeHtml(col)}</li>`).join('')}</ul></div>`;
-                        }
-                    });
-                    sqlTablesList.innerHTML = tablesHtml;
-                    sqlClearBtn.classList.remove('hidden');
-                    sqlStatus.textContent = 'Ready to query.';
-                    sqlRunBtn.disabled = false;
-
-                    if (!sqlCodeInput.value.trim() || sqlCodeInput.value.startsWith('-- Load')) {
-                        const firstTable = Object.keys(tables).find(t => !tables[t].error);
-                        if (firstTable) {
-                            sqlCodeInput.value = `SELECT * FROM ${firstTable} LIMIT 10;`;
-                            syncSqlHighlighting();
-                        }
-                    }
+                    await registerFilesAndDisplaySchema();
                 } catch (error) {
                     sqlTablesList.innerHTML = `<p class="text-red-400">Error reading files: ${error.message}</p>`;
                     sqlStatus.textContent = 'Error.';
@@ -1336,6 +1518,50 @@ print(f"Mean of the array: {np.mean(a)}")`;
                     // Reset file input to allow selecting the same file again
                     event.target.value = null;
                 }
+            }
+
+            async function registerFilesAndDisplaySchema(setInitialQuery = true) {
+                if (Object.keys(loadedSqlFiles).length === 0) {
+                    resetSqlTool(false);
+                    sqlTablesList.innerHTML = '<p class="text-gray-500">Load CSV files to see tables.</p>';
+                    sqlStatus.textContent = 'Ready. Load CSVs.';
+                    return;
+                }
+
+                sqlStatus.textContent = 'Registering tables in DuckDB...';
+                
+                const registerTables = pyodide.globals.get('register_duckdb_tables');
+                const tablesJson = await registerTables(JSON.stringify(loadedSqlFiles));
+                const tables = JSON.parse(tablesJson);
+
+                let tablesHtml = '';
+                Object.entries(tables).forEach(([name, info]) => {
+                    if (info.error) {
+                        tablesHtml += `<div class="bg-gray-900 p-2 rounded"><h4 class="font-bold text-red-400">${escapeHtml(name)}</h4><p class="text-xs text-red-400">Error: ${escapeHtml(info.error)}</p></div>`;
+                    } else {
+                        tablesHtml += `<div class="bg-gray-900 p-2 rounded"><h4 class="font-bold text-indigo-300">${escapeHtml(name)}</h4><p class="text-xs text-gray-400">${info.rows} rows</p><ul class="text-xs text-gray-500 list-disc list-inside pl-2">${info.columns.map(col => `<li>${escapeHtml(col)}</li>`).join('')}</ul></div>`;
+                    }
+                });
+                sqlTablesList.innerHTML = tablesHtml;
+                sqlClearBtn.classList.remove('hidden');
+                sqlStatus.textContent = 'Ready to query.';
+                sqlRunBtn.disabled = false;
+                sqlSaveProjectBtn.disabled = false;
+                sqlSaveQueryBtn.disabled = false;
+
+                if (setInitialQuery && (!sqlCodeInput.value.trim() || sqlCodeInput.value.startsWith('-- Load'))) {
+                    const firstTable = Object.keys(tables).find(t => !tables[t].error);
+                    if (firstTable) {
+                        sqlCodeInput.value = `SELECT * FROM ${firstTable} LIMIT 10;`;
+                        syncSqlHighlighting();
+                    }
+                }
+            }
+
+            function updateProjectButtons() {
+                const hasProject = !!currentProject.name;
+                sqlDeleteProjectBtn.disabled = !hasProject;
+                sqlExportProjectBtn.disabled = !hasProject;
             }
 
             async function runSqlQuery() {
@@ -1402,6 +1628,24 @@ print(f"Mean of the array: {np.mean(a)}")`;
                 sqlResultsTable.classList.remove('hidden');
             }
 
+            function loadQueryList() {
+                sqlQuerySelect.innerHTML = '<option value="">-- New Query --</option>';
+                currentProject.queries.forEach(q => {
+                    const option = document.createElement('option');
+                    option.value = q.name;
+                    option.textContent = q.name;
+                    sqlQuerySelect.appendChild(option);
+                });
+                sqlQuerySelect.value = currentProject.activeQueryName || "";
+                handleQuerySelect();
+            }
+
+            function handleQuerySelect() {
+                const queryName = sqlQuerySelect.value;
+                const query = currentProject.queries.find(q => q.name === queryName);
+                sqlCodeInput.value = query ? query.sql : '';
+                syncSqlHighlighting();
+            }
             // --- Encode/Encrypt Logic ---
             const cryptoAlgorithm = document.getElementById('crypto-algorithm');
             const aesKeyContainer = document.getElementById('aes-key-container');
