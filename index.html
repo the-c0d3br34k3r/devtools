@@ -375,7 +375,7 @@
                     <!-- Right Column: Editor & Results -->
                     <div class="col-span-12 md:col-span-9 flex flex-col space-y-4">
                         <!-- SQL Editor -->
-                        <div class="flex flex-col flex-grow h-2/5 min-h-[150px]">
+                        <div class="flex flex-col min-h-[150px] max-h-[40%]">
                             <div class="flex justify-between items-center mb-2">
                                 <label for="sql-code-input" class="text-sm font-medium">SQL Query</label>
                                 <div class="flex items-center space-x-2">
@@ -395,7 +395,7 @@
                             </div>
                         </div>
                         <!-- Results -->
-                        <div class="flex flex-col flex-grow h-3/5">
+                        <div class="flex flex-col flex-grow min-h-0">
                             <label for="sql-results-table" class="text-sm font-medium mb-2">Results</label>
                             <div id="sql-results-container" class="flex-grow bg-gray-800 border border-gray-700 rounded-md overflow-auto">
                                 <div id="sql-results-placeholder" class="p-4 text-gray-500">Query results will appear here.</div>
